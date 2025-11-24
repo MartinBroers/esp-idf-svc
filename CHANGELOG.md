@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NVS: Implemented `RawHandle` for `EspNvs<NvsDefault>`
 - NVS: Added `EspNvs::erase_all` to remove all data stored in an nvs namespace
 - NVS: Added `EspNvs::keys` to iterate over all stored keys
+- Exposed esp_netif_set_ip_info via set_ip_info (similar to get_ip_info) to allow the driver to use a static IP address.
 
 ## [0.51.0] - 2025-01-15
 
