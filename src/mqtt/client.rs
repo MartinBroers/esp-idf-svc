@@ -85,7 +85,7 @@ pub struct MqttClientConfiguration<'a> {
     #[cfg(all(esp_idf_esp_tls_psk_verification, feature = "alloc"))]
     pub psk: Option<Psk<'a>>,
     // pub alpn_protos: &'a [&'a str],
-    // pub use_secure_element: bool,
+    pub use_secure_element: bool,
     // void *ds_data;                          /*!< carrier of handle for digital signature parameters */
 }
 
@@ -127,6 +127,7 @@ impl Default for MqttClientConfiguration<'_> {
 
             #[cfg(all(esp_idf_esp_tls_psk_verification, feature = "alloc"))]
             psk: None,
+            use_secure_element: false,
         }
     }
 }
@@ -311,10 +312,12 @@ impl<'a> TryFrom<&'a MqttClientConfiguration<'a>>
             c_conf.broker.verification.certificate_len = cert.as_esp_idf_raw_len();
         }
 
-        if let (Some(cert), Some(private_key)) = (conf.client_certificate, conf.private_key) {
+        if let Some(cert) = conf.client_certificate {
             c_conf.credentials.authentication.certificate = cert.as_esp_idf_raw_ptr() as _;
             c_conf.credentials.authentication.certificate_len = cert.as_esp_idf_raw_len();
+        }
 
+        if let Some(private_key) = conf.private_key {
             c_conf.credentials.authentication.key = private_key.as_esp_idf_raw_ptr() as _;
             c_conf.credentials.authentication.key_len = private_key.as_esp_idf_raw_len();
 
@@ -322,6 +325,10 @@ impl<'a> TryFrom<&'a MqttClientConfiguration<'a>>
                 c_conf.credentials.authentication.key_password = pass.as_ptr() as _;
                 c_conf.credentials.authentication.key_password_len = pass.len() as _;
             }
+        }
+
+        if conf.use_secure_element {
+            c_conf.credentials.authentication.use_secure_element = true;
         }
 
         if let Some(outbox_limit) = conf.outbox_limit {
