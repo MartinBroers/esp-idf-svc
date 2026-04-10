@@ -720,7 +720,14 @@ where
                 };
 
                 let mac = unsafe { esp_eth_mac_new_w5500(&w5500_cfg, &mac_cfg) };
+                if mac.is_null() {
+                    return Err(EspError::from(ESP_ERR_INVALID_STATE).unwrap());
+                }
+
                 let phy = unsafe { esp_eth_phy_new_w5500(&phy_cfg) };
+                if phy.is_null() {
+                    return Err(EspError::from(ESP_ERR_INVALID_STATE).unwrap());
+                }
 
                 (mac, phy, spi_handle)
             }
@@ -820,7 +827,13 @@ impl<'d, T> EthDriver<'d, T> {
         flavor: T,
         sysloop: EspSystemEventLoop,
     ) -> Result<Self, EspError> {
-        let cfg = Self::eth_default_config(mac, phy);
+        let mac = core::ptr::NonNull::new(mac)
+            .ok_or_else(|| EspError::from(ESP_ERR_NO_MEM))
+            .map_err(|e| e.unwrap())?;
+        let phy = core::ptr::NonNull::new(phy)
+            .ok_or_else(|| EspError::from(ESP_ERR_NO_MEM))
+            .map_err(|e| e.unwrap())?;
+        let cfg = Self::eth_default_config(mac.as_ptr(), phy.as_ptr());
 
         let mut handle: esp_eth_handle_t = ptr::null_mut();
         esp!(unsafe { esp_eth_driver_install(&cfg, &mut handle) })?;
